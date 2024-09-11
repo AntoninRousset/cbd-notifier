@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 from datetime import timedelta
 from sqlalchemy.exc import NoResultFound, IntegrityError
+from httpx import AsyncClient
 from telegram.ext import (
     Application as TelegramApplication,
     CallbackQueryHandler,
@@ -100,11 +101,13 @@ class Application:
         await query.edit_message_reply_markup(reply_markup=reply_markup)
 
     async def _poll(self, context: ContextTypes.DEFAULT_TYPE) -> None:
-        async with self._db_sessionmaker() as db_session:
+        async with self._db_sessionmaker() as db_session, AsyncClient() as client:
             for topic in await db_session.scalars(
-                select(Topic).options(selectinload(Topic.subscriptions))
+                select(Topic).options(
+                    selectinload(Topic.origins), selectinload(Topic.subscriptions)
+                )
             ):
-                async for new_document in topic.poll():
+                async for new_document in topic.poll(client):
                     if new_document.symbol:
                         for subscription in topic.subscriptions:
                             await self._application.bot.sendMessage(

@@ -10,8 +10,6 @@ if TYPE_CHECKING:  # pragma: no cover
 
 class Subscription(SQLModel, table=True):
     chat_id: int = Field(foreign_key="chat.id", primary_key=True)
-    chat: Chat = Relationship(
-        back_populates="subscriptions", sa_relationship_kwargs={"cascade": "delete"}
-    )
+    chat: Chat = Relationship(back_populates="subscriptions")
     topic_name: str = Field(foreign_key="topic.name", primary_key=True)
     topic: "Topic" = Relationship(back_populates="subscriptions")

@@ -1,6 +1,6 @@
 import asyncio
 from datetime import timedelta
-from typing import Annotated
+from typing import Annotated, Iterable
 
 from sqlmodel import SQLModel
 from sqlalchemy.ext.asyncio import (
@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import (
 import typer
 
 from cbd_notifier.application import Application
-from cbd_notifier.topic import Topic
+from cbd_notifier.topic import Topic, TopicOrigin
 
 DEFAULT_DATABASE_URL = "sqlite+aiosqlite:///cbd_notifier.db"
 DEFAULT_TOPIC_POLL_INTERVAL = 60
@@ -22,11 +22,11 @@ app = typer.Typer()
 
 async def _add_topic(
     name: str,
-    url: str,
+    urls: Iterable[str],
     db_sessionmaker: async_sessionmaker[AsyncSession],
 ) -> None:
     async with db_sessionmaker() as db_session:
-        topic = Topic(name=name, url=url)
+        topic = Topic(origins=[TopicOrigin(url=url) for url in urls], name=name)
         db_session.add(topic)
         await db_session.commit()
 
@@ -34,15 +34,14 @@ async def _add_topic(
 @app.command()
 def add_topic(
     name: str,
-    url: str,
-    *,
+    urls: list[str],
     database_url: Annotated[
         str, typer.Option(envvar="DATABASE_URL")
     ] = DEFAULT_DATABASE_URL,
 ) -> None:
     db_engine = create_async_engine(database_url)
     db_sessionmaker = async_sessionmaker(db_engine)
-    asyncio.run(_add_topic(name, url, db_sessionmaker=db_sessionmaker))
+    asyncio.run(_add_topic(name, urls, db_sessionmaker=db_sessionmaker))
 
 
 async def _init(async_engine: AsyncEngine) -> None:

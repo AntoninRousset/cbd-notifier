@@ -107,12 +107,11 @@ class Application:
                     selectinload(Topic.origins), selectinload(Topic.subscriptions)
                 )
             ):
-                async for new_document in topic.poll(client):
-                    if new_document.symbol:
-                        for subscription in topic.subscriptions:
-                            await self._application.bot.sendMessage(
-                                subscription.chat_id, str(new_document)
-                            )
+                async for new_file in topic.poll(client):
+                    for subscription in topic.subscriptions:
+                        await self._application.bot.sendMessage(
+                            subscription.chat_id, f"({topic.name}) {new_file}"
+                        )
 
     async def _start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         chat_id = update.effective_message.chat_id

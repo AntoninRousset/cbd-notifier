@@ -61,4 +61,23 @@ class IndexList(BaseModel):
     response: create_model("IndexResponse", docs=(list[Index], ...))
 
 
-File = Document | Recommendation | Notification
+class Statement(BaseModel):
+    id: str = Field(validation_alias="_id")
+    datetime: str
+    title: str
+
+    def __eq__(self, other):
+        return self.id == other.id
+
+    def __hash__(self):
+        return hash(self.id)
+
+    def __str__(self) -> str:
+        return f"[{self.datetime}] <Statement> '{self.title}'"
+
+
+class StatementList(RootModel):
+    root: list[Statement]
+
+
+File = Document | Recommendation | Notification | Statement

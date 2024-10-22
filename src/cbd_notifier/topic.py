@@ -5,7 +5,7 @@ from sqlmodel import Field, Relationship, SQLModel
 from typing import ClassVar
 from typing import AsyncIterator
 
-from cbd_notifier.file import DocumentList, IndexList, File
+from cbd_notifier.file import DocumentList, IndexList, StatementList, File
 from cbd_notifier.subscription import Subscription
 
 
@@ -20,8 +20,10 @@ class TopicOrigin(SQLModel, table=True):
 
     async def poll(self, client) -> AsyncIterator[File]:
         response = await client.get(self.url)
-        data = TypeAdapter(DocumentList | IndexList).validate_json(response.content)
-        files = data.root if isinstance(data, DocumentList) else data.response.docs
+        data = TypeAdapter(DocumentList | IndexList | StatementList).validate_json(
+            response.content
+        )
+        files = data.response.docs if isinstance(data, IndexList) else data.root
 
         for file in files:
             if file not in self.files:
